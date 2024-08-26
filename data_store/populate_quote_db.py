@@ -23,7 +23,7 @@ def compute_hash(text):
 # put all of the db functions into their own class
 def creat_db_tables():
     # Connect to PostgreSQL
-    conn = psycopg2.connect("dbname=db_90982ed4_0798_4336_b71a_04c883300001 user=u_90982ed4_0798_4336_b71a_04c883300001 password=MHklQ42D8Z2PNp3438R4TWYF79ET391wABUvxg9Zx3Pl8JZnl184")
+    conn = psycopg2.connect("CONNECTION_STRING")
     cur = conn.cursor()
     # Create tables
     cur.execute("""
