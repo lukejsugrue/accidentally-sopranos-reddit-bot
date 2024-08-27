@@ -3,6 +3,15 @@ import praw
 import pdb
 import re
 
+from data_store import DbUtils
+
+def main():
+    # Use your imported classes and functions here
+    obj1 = Class1()
+    obj2 = Class2()
+    # ...
+
+
 reddit = praw.Reddit('sopranos_bot')
 
 subreddit = reddit.subreddit("mildlyinfuriating")
@@ -21,3 +30,8 @@ for submission in subreddit.hot(limit=50):
     print(submission.title)
 
     if submission.id not in found_quotes:
+        re.search
+
+
+if __name__ == "__main__":
+    main()
