@@ -1,10 +1,26 @@
 import psycopg2
 from psycopg2.extras import execute_values
 import hashlib
+from dotenv import load_dotenv
+import os
 
 class DbUtils:
     # shared across module
-    conn = psycopg2.connect("dbname=db_90982ed4_0798_4336_b71a_04c883300001 user=u_90982ed4_0798_4336_b71a_04c883300001 password=MHklQ42D8Z2PNp3438R4TWYF79ET391wABUvxg9Zx3Pl8JZnl184 host=pg.rapidapp.io port=5432")
+    load_dotenv()
+    
+    db_host = os.getenv('DB_HOST')
+    db_port = os.getenv('DB_PORT')
+    db_name = os.getenv('DB_NAME')
+    db_user = os.getenv('DB_USER')
+    db_password = os.getenv('DB_PASSWORD')
+
+    conn = psycopg2.connect(
+        host=db_host,
+        port=db_port,
+        dbname=db_name,
+        user=db_user,
+        password=db_password
+    )
     cur = conn.cursor()
 
     # output = pdfminer.high_level.extract_text("raw_scripts/48624984-The-Sopranos-1x05-College.pdf")
@@ -49,7 +65,7 @@ class DbUtils:
             )
         """)
 
-        self.cur.execute("CREATE INDEX IF NOT EXISTS idx_reddit_hash ON RedditComments(comment_hash)")
+        # self.cur.execute("CREATE INDEX IF NOT EXISTS idx_reddit_hash ON RedditComments(comment_hash)")
         self.cur.execute("CREATE INDEX IF NOT EXISTS idx_sopranos_hash ON SopranosQuotes(quote_hash)")
     
     # params: List<(character, quote, quote_hash)>
