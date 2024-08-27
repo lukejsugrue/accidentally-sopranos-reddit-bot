@@ -7,7 +7,7 @@ import os
 class DbUtils:
     # shared across module
     load_dotenv()
-    
+
     db_host = os.getenv('DB_HOST')
     db_port = os.getenv('DB_PORT')
     db_name = os.getenv('DB_NAME')
@@ -23,22 +23,19 @@ class DbUtils:
     )
     cur = conn.cursor()
 
-    # output = pdfminer.high_level.extract_text("raw_scripts/48624984-The-Sopranos-1x05-College.pdf")
-    # "raw_scripts/48624984-The-Sopranos-1x05-College.txt"
+    # method takes script file, finds quotes, adds them to the db
     def build_quote_table_from_script_file(self, filename):
         output = []
+        characters = ["TONY", "CARMELLA", "MEADOW", "IRINA", "ANTHONY JR", "CHRISTOPHER", "PAULIE", "SIL"]
 
         with open(filename, 'r+') as rf:
             lines = rf.readlines()[1::2]  # use slice to avoid escape character
             line_iter= iter(lines)
             for line in line_iter:
-                if (any(map(line.__contains__, ["TONY", "CARMELLA", "MEADOW", "IRINA", "ANTHONY JR", "CHRISTOPHER"]))):
+                character = next((char for char in characters if char in line), None)
+                if character:
                     quote = str(next(line_iter)).strip()
-                    output.append( (str(line).strip(), quote, compute_hash(quote)) )
-
-        print(output)
-
-        # check formatting of the quote data
+                    output.append( (character, quote, compute_hash(quote)) )
 
         # create db tables
         self.create_db_tables()
@@ -49,10 +46,11 @@ class DbUtils:
     # Create tables
     def create_db_tables(self):
         self.cur.execute("""
-            CREATE TABLE IF NOT EXISTS RedditComments (
-                id SERIAL PRIMARY KEY,
+            CREATE TABLE RedditComments (
+                id TEXT PRIMARY KEY,
                 comment TEXT,
-                comment_hash TEXT
+                comment_hash TEXT,
+                processed BOOLEAN DEFAULT FALSE
             )
         """)
 
@@ -65,14 +63,40 @@ class DbUtils:
             )
         """)
 
-        # self.cur.execute("CREATE INDEX IF NOT EXISTS idx_reddit_hash ON RedditComments(comment_hash)")
+        self.cur.execute("CREATE INDEX IF NOT EXISTS idx_reddit_hash ON RedditComments(comment_hash)")
         self.cur.execute("CREATE INDEX IF NOT EXISTS idx_sopranos_hash ON SopranosQuotes(quote_hash)")
     
     # params: List<(character, quote, quote_hash)>
     def populate_sopranos_table(self, data):
-
         execute_values(self.cur, f"INSERT INTO SopranosQuotes (character_name, quote, quote_hash) VALUES %s", data)
         self.conn.commit()
+    
+    def store_comments(self, comments):
+        comments = []
+        print(comments)
+        for comment in comments:
+            comments.append((
+                comment.id,
+                comment.body,
+                self.compute_hash(comment.body),
+                False
+            ))
+        
+        execute_values(self.cur, 
+            "INSERT INTO reddit_comments (id, content, content_hash, processed) VALUES %s ON CONFLICT (id) DO NOTHING",
+            comments
+        )
+        self.conn.commit()
+        print(f"Stored {len(comments)} comments")
+
+    def find_matches(self):
+        self.cur.execute("""
+            SELECT rc.id, rc.content, sq.quote, sq.character_name 
+            FROM reddit_comments rc
+            JOIN SopranosQuotes sq ON rc.content_hash = sq.quote_hash
+            WHERE rc.processed = FALSE
+        """)
+        return self.cur.fetchall()
 
 
 # helper function to compute hash of a string

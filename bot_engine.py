@@ -1,4 +1,5 @@
 import os
+import time
 import praw
 import pdb
 import re
@@ -6,32 +7,23 @@ import re
 from data_store import DbUtils
 
 def main():
-    # Use your imported classes and functions here
-    obj1 = Class1()
-    obj2 = Class2()
-    # ...
+    dbLib = DbUtils()
 
+    reddit = praw.Reddit('sopranos_bot')
+    subreddit = reddit.subreddit("applyingtocollege")
+    print(subreddit.comments(limit=1000))
 
-reddit = praw.Reddit('sopranos_bot')
+    dbLib.store_comments( subreddit.comments(limit=1000) )
 
-subreddit = reddit.subreddit("mildlyinfuriating")
-
-if not os.path.isfile("soprano_posts.txt"):
-    found_quotes = []
-
-else:
-    # Read the file into a list and remove any empty values
-    with open("soprano_posts.txt", "r") as f:
-        found_quotes = f.read()
-        found_quotes = found_quotes.split("\n")
-        found_quotes = list(filter(None, found_quotes))
-
-for submission in subreddit.hot(limit=50):
-    print(submission.title)
-
-    if submission.id not in found_quotes:
-        re.search
-
+    matches = dbLib.find_matches()
+    print(matches)
+    for comment_id, comment, quote, character in matches:
+        comment = reddit.comment(comment_id)
+        reply = f'"{quote}" - {character} from The Sopranos'
+        comment.reply(reply)
+        print(f"Replied to comment: {comment_id}")
+            
+        time.sleep(60)  # Wait for a minute before the next batch
 
 if __name__ == "__main__":
     main()
